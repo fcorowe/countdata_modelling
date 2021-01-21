@@ -1,0 +1,234 @@
+---
+title: "Modelling Count Data in A Multilevel Framework"
+subtitle: "A Quick Guide"
+author: "Francisco Rowe"
+date: "`r Sys.Date()`"
+output: tint::tintHtml
+bibliography: skeleton.bib
+link-citations: yes
+---
+
+```{r setup, include=FALSE}
+library(tint)
+# invalidate cache when the package version changes
+knitr::opts_chunk$set(tidy = FALSE, cache.extra = packageVersion('tint'))
+options(htmltools.dir.version = FALSE)
+```
+
+# Aim
+
+This notebook is a practical guide. It aims to illustrate how to quickly estimate a count data regression model using four different variants: Poisson, Zero-inflated Poisson, Negative Binomial and Zero-inflated Negative Binomial models. It is not supposed to be a comprehensive guide but it is an starting point if you don't know what R packages and how relevant functions can be used to estimate these models.
+
+Here I am particularly interested in fitting these models in a hierarchical modelling framework. I illustrate this by using R functions within the `glmmTMB()` package and also `glmer()` or `glmer.nb()` within the `lme4` package.  
+
+**Why these two packages?**
+I use `lme4` because it is one of the most widely used R packages for fitting multilevel models or generalised linear mixed models (GLMMs) [@JSSv067i01]. And,
+I focus primarily on `glmmTMB()` because of its speed, flexibility and interface's similarity to `lme4` [@RJ-2017-066]. Additionally, while Poisson and Negative Binomial regression models can be estimated using `lme4`, fitting zero-inflated models requires weighting the data appropriately to their zero probability [@bolker2012owls] and `glmer.nb()` is  slower and unstable compared to other functions [@bolker2021faqs].
+
+
+> See [Brooks et al. (2017)](https://doi.org/10.32614/RJ-2017-066) for more information on `glmmTMB()`, and [Bates et al., (2015)](http://dx.doi.org/10.18637/jss.v067.i01) for `lme4`. Below I quickly call the packages and describe the data before illustrating the use of `glmmTMB()`. 
+
+# Dependencies
+
+```{r message=FALSE}
+library(tidyverse)
+library(lme4)
+library(merTools)
+library(glmmTMB) # fitting generalised linear mixed models
+library(bbmle) # general maximum likelihood estimation
+library(ggthemes)
+library(showtext)
+```
+
+Set font style
+```{r}
+# load font
+font_add_google("Roboto Condensed", "robotocondensed")
+# automatically use showtext to render text
+showtext_auto()
+```
+
+# Data
+
+The data are included in the `glmmTMB()` package and originally taken from @zuur2009mixed. They quantify the amount of sibling negotiation (vocalizations when parents are absent) by owlets (owl chicks) in different nests
+as a function of food treatment (deprived or satiated), the sex of the parent, and arrival time of the parent at the nest. Since the same nests are observed repeatedly, it is natural to consider a mixed-effects model for these data, with the nest as a random effect. Because we are interested in explaining variability
+in the number of vocalizations per chick, the total brood size in each nest is
+used as an offset in the model. 
+
+I know animals! Human population data for the next iteration.
+
+Reading and transforming data:
+
+```{r}
+Owls <- transform(Owls,
+                  Nest = reorder(Nest,NegPerChick),
+                  NCalls = SiblingNegotiation,
+                  FT = FoodTreatment)
+```
+
+Let's have a quick look at the dependent variable:
+
+```{r fig-nocap-margin-first, fig.margin=TRUE, fig.width=4, fig.height=4, cache=TRUE, echo=FALSE}
+ggplot(data = Owls) +
+    geom_histogram(aes(x = NCalls), 
+                   fill = "#440154FF",
+                   alpha = 1) +
+    theme_tufte() + 
+    theme(text = element_text(family="robotocondensed",
+                              size = 20)) +
+    labs(x= "Number of vocalizations",
+       y = "Density")
+```
+
+# Using glmmTMB
+
+## **Poisson regression**
+
+We fit a varying-intercept Poisson model with offset (i.e. relative risk). We first specify the model and run `glmmTMB`. The varying-intercept term is fitted using a similar syntax to that in `lme4`; that is, adding `(1 | group)` assuming that it contains a group-level identifier - see [Bolker et al's FAQs](http://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#model-specification) for details.
+
+```{r}
+eq <- NCalls ~ (FT + ArrivalTime) * SexParent + offset( log( BroodSize)) + ( 1 | Nest)
+
+poisson1 <- glmmTMB(eq, 
+                    data=Owls,
+                    ziformula=~0,
+                    family=poisson)
+summary(poisson1)
+```
+> NOTE: 
+If you run into problems using `glmmTMB`, reinstall `glmmTMB` from the source code and restart R as described [here](https://github.com/glmmTMB/glmmTMB/issues/615).
+
+## **Zero-inflated Poisson regression**
+
+Now we will fit a zero-inflated Poisson regression. `glmmTMB` by default estimates model excluding zero-inflation. To explicitly exclude zero-inflation, use `ziformula = ~0`.
+
+To estimate a zero-inflated Poisson model with a single zero-inflation parameter applying to all observations, use `ziformula = ~1`.
+
+Following from above, we fit a varying-intercept zero-inflated Poisson model with an offset parameter.
+
+```{r}
+eq <- NCalls ~ (FT + ArrivalTime) * SexParent + offset( log( BroodSize)) + ( 1 | Nest)
+
+zipoisson1 <- glmmTMB(eq,
+                      data=Owls,
+                      ziformula=~1,
+                      family=poisson)
+summary(zipoisson1)
+```
+
+## **Negative Binomial regression**
+
+Next we fit a negative binomial regression. A negative binomial specification is normally used to handle over-dispersed data. Two parameterisations are often used to fit negative binomial regression models (see @hilbe2011negative): (a) *NB1* (variance = $\mu$ + $\alpha\mu$); and, (b) *NB2* (variance = $\mu + \alpha\mu^2$); where $\mu$ is the mean, and $\alpha$ is the overdispersion parameter. NB2 is the default parameterisation. As stated in [Hilbe (2011)](https://doi.org/10.1017/CBO9780511973420), "*NB2 is the standard form of negative binomial used to estimate data that are Poisson-overdispersed, and it is the form of the model which most statisticians understand by negative binomial. NB2 is typically the first model we turn to when we discover that a Poisson model is overdispersed.*"
+
+### NB1 parameterisation
+
+We first fit a negative binomial model based on the NB1 parameterisation.
+```{r}
+nbinom1a <- glmmTMB(eq,
+                    data=Owls,
+                    ziformula=~0,
+                    family=nbinom1)
+summary(nbinom1a)
+```
+
+### NB2 parameterisation
+
+We also estimate the NB2 version.
+```{r}
+nbinom2b <- glmmTMB(eq,
+                    data=Owls,
+                    ziformula=~0,
+                    family=nbinom2)
+summary(nbinom2b)
+```
+
+## **Zero-inflated Negative Binomial regression**
+
+Similarly we fit zero-inflated negative binomial model regressions for both parametrisations: 
+
+### NB1 parameterisation
+
+```{r}
+zinbinom1a <- glmmTMB(eq ,
+                      data=Owls,
+                      ziformula=~1,
+                      family=nbinom1)
+summary(zinbinom1a)
+```
+
+
+### NB2 parameterisation
+
+```{r}
+zinbinom2b <- glmmTMB(eq ,
+                      data=Owls,
+                      ziformula=~1,
+                      family=nbinom2)
+summary(zinbinom2b)
+```
+
+
+# Using lme4
+
+We can use `lme4` functions to fit Poisson and Negative Binomials models. However, as indicated above, zero-inflated models are not supported so these models are not considered here, but they can be estimated by implementing general expectation-maximisation algorithm as discussed by @bolker2013strategies. If you are interested in this, the relevant R code is [here](https://github.com/bbolker/asaglmm/blob/master/R/owls_R_funs.R) in a function called `zipme`.
+
+## **Poisson regression**
+
+Similar to the models fitted above, we start by estimating a varying-intercept Poisson model with offset. We use 100 points per axis in the adaptive Gauss-Hermite approximation of the log likelihood specifying `nAGQ`. The use of more points improves accuracy but will take longer. The default estimation uses the Laplace approximation
+which is equivalent to 1 point evaluated per axis in Gauss-Hermite approximation.
+
+> NOTE: `glmmTMB` uses maximum likelihood estimation and the Laplace approximation. It does not support
+restricted maximum likelihood estimation or Gauss-Hermite quadrature to integrate over random effects [(Brooks et al. 2017)](https://doi.org/10.32614/RJ-2017-066).
+
+```{r, warning=FALSE}
+eq <- NCalls ~ (FT + ArrivalTime) * SexParent + offset( log( BroodSize)) + ( 1 | Nest)
+
+poisson2 <- glmer(eq,
+            data = Owls,
+            family = poisson, 
+            nAGQ = 100)
+summary(poisson2)
+```
+
+
+## **Negative Binomial regression**
+
+We also fit a negative binomial model and remind the reader is glmer.nb may be slower and unstable compared to other functions. 
+
+> NOTE: `glmer.nb` estimates a starting $\theta$ value automatically by fitting a `glmer` model with `family = poisson` to estimate an overdispersion parameter from the residuals (see `lme4:::est_theta` on the console for details).
+
+```{r}
+nbinom3 <- glmer.nb(eq ,
+                    data=Owls)
+summary(nbinom3)
+```
+
+
+# So What *R* Package?
+
+As noted by @bolker2020getting, `glmmTMB` should generally be expected to offer advantages over `lme4` by providing greater flexibility and speed for fitting generalised linear mixed models (GLMMs), particularly for models with large numbers of parameters. In contrast, `lme4` should generally be expected to be faster for fitting linear mixed models (LMMs). Additionally, `lme4` is a more mature package offering a wide range of diagnostic checks and methods.
+
+[(Brooks et al. 2017)](https://doi.org/10.32614/RJ-2017-066) compares the flexibility and speed of `glmmTMB` against various R packages offering functions to fit zero-inflated mixed models. The comparison shows that `glmmTMB` is faster than `glmmADMB`, `MCMCglmm` and `brms`, and more flexible than `INLA` and `mgcv` for modelling zero-inflated count data.
+
+> NOTE:
+The following R packages can be used for modelling count data:
+
+* *MASS*
+* *gamlss*
+* *glmmADMB*
+* *MCMCglmm*
+* *brms*
+* *INLA*
+* *mgcv*
+* *pscl*
+* *gamlssNP*
+
+The most commonly used R functions for mixed-effects or hierarchical modelling in R are [@bolker2021faqs]:
+
+* Linear Mixed Models: `aov()`, `nlme::lme1`, `lme4::lmer`; `brms::brm`
+* Generalized Linear Mixed Models:
+ + Frequentist: `MASS::glmmPQL`, `lme4::glmer`; `glmmTMB`
+ + Bayesian: `MCMCglmm::MCMCglmm`; `brms::brm`
+* Nonlinear Mixed Models: `nlme::nlme`, `lme4::nlmer`; `brms::brm`
+* Generalized Nonlinear Mixed Models: `brms::brm`
+
