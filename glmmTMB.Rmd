@@ -227,8 +227,8 @@ The most commonly used R functions for mixed-effects or hierarchical modelling i
 
 * Linear Mixed Models: `aov()`, `nlme::lme1`, `lme4::lmer`; `brms::brm`
 * Generalized Linear Mixed Models:
- + Frequentist: `MASS::glmmPQL`, `lme4::glmer`; `glmmTMB`
- + Bayesian: `MCMCglmm::MCMCglmm`; `brms::brm`
+    + Frequentist: `MASS::glmmPQL`, `lme4::glmer`; `glmmTMB`
+    + Bayesian: `MCMCglmm::MCMCglmm`; `brms::brm`
 * Nonlinear Mixed Models: `nlme::nlme`, `lme4::nlmer`; `brms::brm`
 * Generalized Nonlinear Mixed Models: `brms::brm`
 
