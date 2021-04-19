@@ -12,9 +12,9 @@
 
 <meta name="author" content="Francisco Rowe" />
 
-<meta name="date" content="2021-01-21" />
+<meta name="date" content="2021-04-19" />
 
-<title>Modelling Count Data in A Multilevel Framework</title>
+<title>Modelling Count Data in R: A Multilevel Framework</title>
 
 <style type="text/css">
 @charset "UTF-8";
@@ -294,10 +294,10 @@ if (window.hljs) {
 
 
 
-<h1 class="title toc-ignore">Modelling Count Data in A Multilevel Framework</h1>
+<h1 class="title toc-ignore">Modelling Count Data in R: A Multilevel Framework</h1>
 <h3 class="subtitle">A Quick Guide</h3>
 <h4 class="author">Francisco Rowe</h4>
-<h4 class="date">2021-01-21</h4>
+<h4 class="date">2021-04-19</h4>
 
 
 
@@ -596,6 +596,11 @@ summary(zinbinom2b)</code></pre>
 ## (Intercept)  -1.2782     0.1223  -10.45   &lt;2e-16 ***
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<p>By this point you may want to know about more about overdispersion.</p>
+<p><strong>What causes overdispersion?</strong> Overdispersion is caused by positive correlation between responses or by an excess variation between response probabilities or counts. Overdispersion also arises when there are violations in the distributional assumptions of the data, such as when the data are clustered and thereby violate the likelihood independence of observations assumption.</p>
+<p><strong>Why is overdispersion a problem?</strong> Overdispersion may cause standard errors of the estimates to be underestimated. As a result, a variable may appear to be a significant predictor when it is not.</p>
+<p><strong>How is overdispersion recognised?</strong> A model may be overdispersed if the value of the Pearson (or $$2) statistic divided by the degrees of freedom is greater than <span class="math inline">\(1\)</span>. The quotient of either is called the dispersion.</p>
+<p><strong>What is apparent overdispersion / how can it be corrected?</strong> Apparent overdispersion occurs when: (i) the model omits important explanatory predictors; (ii) the data include outliers; (iii) the model fails to include a sufficient number of interaction terms; (iv) a predictor needs to be transformed to another scale; (v) the assumed linear relationship between the response and the link function and predictors is mis-specified or inappropriate.</p>
 </div>
 </div>
 </div>

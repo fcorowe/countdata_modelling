@@ -167,6 +167,33 @@ zinbinom2b <- glmmTMB(eq ,
 summary(zinbinom2b)
 ```
 
+By this point you may want to know about more about overdispersion.
+
+**What causes overdispersion?**
+Overdispersion is caused by positive correlation between responses or by an
+excess variation between response probabilities or counts. Overdispersion
+also arises when there are violations in the distributional assumptions of the
+data, such as when the data are clustered and thereby violate the likelihood
+independence of observations assumption.
+
+**Why is overdispersion a problem?**
+Overdispersion may cause standard errors of the estimates to be
+underestimated. As a result, a variable may appear to be a significant predictor when
+it is not.
+
+**How is overdispersion recognised?**
+A model may be overdispersed if the value of the Pearson (or $\chi$2) statistic
+divided by the degrees of freedom is greater than $1$. The quotient of
+either is called the dispersion.
+
+**What is apparent overdispersion / how can it be corrected?**
+Apparent overdispersion occurs when:
+(i) the model omits important explanatory predictors;
+(ii) the data include outliers;
+(iii) the model fails to include a sufficient number of interaction terms;
+(iv) a predictor needs to be transformed to another scale;
+(v) the assumed linear relationship between the response and the link function
+and predictors is mis-specified or inappropriate.
 
 # Using lme4
 
