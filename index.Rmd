@@ -1,5 +1,5 @@
 ---
-title: "Modelling Count Data in A Multilevel Framework"
+title: "Modelling Count Data in R: A Multilevel Framework"
 subtitle: "A Quick Guide"
 author: "Francisco Rowe"
 date: "`r Sys.Date()`"
