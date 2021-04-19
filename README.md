@@ -1,4 +1,4 @@
-# A Quick Guide: Modelling Count Data in A Multilevel Framework
+# A Quick Guide: Modelling Count Data in R: A Multilevel Framework
 
 [Francisco Rowe](http://www.franciscorowe.com) [[`@fcorowe`](http://twitter.com/fcorowe)]
 
