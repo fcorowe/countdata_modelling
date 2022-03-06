@@ -18,7 +18,7 @@ If you use the material, code or processed data, you can give appropriate attrib
 @article{rowe_gds21,
   author = {Francisco Rowe},
   title = {A Quick Guide: Modelling Count Data in R: A Multilevel Framework},
-  year = 2021,
+  year = 2022,
   url = {fcorowe.github.io/countdata_modelling/},
   doi = {DOI 10.17605/OSF.IO/RGWH2},
 }
