@@ -20,6 +20,6 @@ If you use the material, code or processed data, you can give appropriate attrib
   title = {A Quick Guide: Modelling Count Data in R: A Multilevel Framework},
   year = 2021,
   url = {fcorowe.github.io/countdata_modelling/},
-  doi = {DOI 10.17605/OSF.IO/3A2RU},
+  doi = {DOI 10.17605/OSF.IO/RGWH2},
 }
 ```
